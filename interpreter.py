@@ -1,3 +1,5 @@
+import random
+
 class Interpreter():
 
     def __init__(self, lines):
@@ -21,10 +23,10 @@ class Interpreter():
         self.stack = []
 
         self.stringmode = False
-        self.stop = False
+        self.done = False
 
     def interpret(self):
-        while not self.stop:
+        while not self.done:
             command = self.source[self.pointer[0]][self.pointer[1]]
 
             # Make sure the stack has enough items for the command
@@ -34,16 +36,17 @@ class Interpreter():
             interpret_command(command)
 
             # Move the pointer
-
-            self.stop = True
+            move_pointer()
 
     def validate_command(self, command):
         if command in ['+', '*', '-', '/', '%', '`', '\\', 'g', 'p']:
             assert len(self.stack >= 2), f'Command \'{command}\' requires at least 2 values on the stack'
-        elif command in ['!', '_', '|', ':', '$', , '.', ',']:
+        elif command in ['!', '_', '|', ':', '$', '.', ',']:
             assert len(self.stack >= 1), f'Command \'{command}\' requires at least 1 value on the stack'
 
     def interpret_command(self, command):
+        # TODO handle stringmode
+
         # Perform the operation
         if command == '+':
             # Addition: Pop two values a and b, then push the result of a+b
@@ -90,3 +93,93 @@ class Interpreter():
         elif command == 'v':
             # PC direction down
             self.direction = 2
+        elif command == '?':
+            # Random PC direction
+            self.direction = random.choice(self.directions)
+        elif command == '_':
+            # Horizontal IF: pop a value; set direction to right if value=0, set to left otherwise
+            if stack.pop() == 0:
+                self.direction = 1
+            else:
+                self.direction = 3
+        elif command == '|':
+            # Vertical IF: pop a value; set direction to down if value=0, set to up otherwise
+            if stack.pop() == 0:
+                self.direction = 2
+            else:
+                self.direction = 0
+        elif command == '"':
+            # Toggle stringmode (push each character's ASCII value all the way up to the next ")
+            self.stringmode = not self.stringmode
+        elif command == ':':
+            # Duplicate top stack value
+            value = stack.pop()
+            stack.push(value)
+            stack.push(value)
+        elif command == '\\':
+            # Swap top stack values
+            value1 = stack.pop()
+            value2 = stack.pop()
+            stack.push(value1)
+            stack.push(value2)
+        elif command == '$':
+            # Pop (remove) top stack value and discard
+            stack.pop()
+        elif command == '.':
+            # Pop top of stack and output as integer
+            print(stack.pop())
+        elif command == ',':
+            # Pop top of stack and output as ASCII character
+            print(chr(stack.pop()))
+        elif command == '#':
+            # Bridge: jump over next command in the current direction of the current PC
+            # This is handled by moving the pointer twice
+            move_pointer()
+        elif command == 'g':
+            # A "get" call (a way to retrieve data in storage).
+            # Pop two values y and x, then push the ASCII value of the character
+            # at that position in the program. If (x,y) is out of bounds, push 0
+            y = stack.pop()
+            x = stack.pop()
+            if x in range(0, self.cols) and y in range(0, self.rows):
+                stack.push(ord(self.source[y][x]))
+            else:
+                stack.push(0)
+        elif command == 'p':
+            # A "put" call (a way to store a value for later use).
+            # Pop three values y, x and v, then change the character at the
+            # position (x,y) in the program to the character with ASCII value v
+            y = stack.pop()
+            x = stack.pop()
+            v = stack.pop()
+            self.source[y][x] = v
+        elif command == '&':
+            # Get integer from user and push it
+            input = false
+            while not input:
+                try:
+                    stack.push(input('Enter an integer: '))
+                    input = True
+                except:
+                    print('Invalid input')
+        elif command == '~':
+            # Get character from user and push it
+            input = false
+            while not input:
+                try:
+                    stack.push(ord(input('Enter a character: ')))
+                    input = True
+                except:
+                    print('Invalid input')
+        elif command == '@':
+            # End program
+            self.done = True
+        elif command.isdigit():
+            # Push corresponding number onto the stack
+            stack.push(int(command))
+
+    def move_pointer(self):
+        move = self.move_directions[self.direction]
+        y = (self.pointer[0] + move[0]) % self.rows
+        x = (self.pointer[1] + move[1]) % self.cols
+        self.pointer = [y, x]
