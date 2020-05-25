@@ -1,8 +1,12 @@
 import random
+import numpy as np
+import matplotlib.pyplot as plt
 
 class Interpreter():
 
-    def __init__(self, lines):
+    def __init__(self, lines, visualize):
+        self.visualize = visualize
+
         # Set pointer bounds
         self.rows = len(lines)
         self.cols = len(max(lines, key=len))
@@ -29,11 +33,25 @@ class Interpreter():
         while not self.done:
             command = self.source[self.pointer[0]][self.pointer[1]]
 
+            if self.visualize:
+                self.print_source(command)
+
             # Perform the command
             self.interpret_command(command)
 
             # Move the pointer
             self.move_pointer()
+
+    def print_source(self, command):
+        print(f'Command: {command}       Stack: {self.stack}')
+        for y, row in enumerate(self.source):
+            line = ''.join([str(c) for c in row])
+            if y == self.pointer[0]:
+                line = line[:self.pointer[1]] + '█' + line[self.pointer[1]+1:]
+            print(line)
+
+        # Pause for user input
+        _ = input()
 
     def safe_pop(self):
         # If the stack has run out of values, return 0
@@ -43,8 +61,6 @@ class Interpreter():
             return 0
 
     def interpret_command(self, command):
-        # TODO handle stringmode
-
         # Perform the operation
         if command == '"':
             # Toggle stringmode
@@ -134,10 +150,10 @@ class Interpreter():
             self.safe_pop()
         elif command == '.':
             # Pop top of stack and output as integer
-            print(self.safe_pop())
+            print(self.safe_pop(), end = '')
         elif command == ',':
             # Pop top of stack and output as ASCII character
-            print(chr(self.safe_pop()))
+            print(chr(self.safe_pop()), end = '')
         elif command == '#':
             # Bridge: jump over next command in the current direction of the current PC
             # This is handled by moving the pointer twice
@@ -149,7 +165,7 @@ class Interpreter():
             y = self.safe_pop()
             x = self.safe_pop()
             if x in range(0, self.cols) and y in range(0, self.rows):
-                self.stack.append(ord(self.source[y][x]))
+                self.stack.append(ord(str(self.source[y][x])))
             else:
                 self.stack.append(0)
         elif command == 'p':
@@ -159,7 +175,7 @@ class Interpreter():
             y = self.safe_pop()
             x = self.safe_pop()
             v = self.safe_pop()
-            self.source[y][x] = v
+            self.source[y][x] = chr(v)
         elif command == '&':
             # Get integer from user and push it
             valid = False
