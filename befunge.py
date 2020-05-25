@@ -1,6 +1,6 @@
 from interpreter import Interpreter
 
-filename = 'examples/factorial.txt'
+filename = 'examples/cat.txt'
 
 if __name__ == '__main__':
     # Read each line into a string, removing trailing whitespace
