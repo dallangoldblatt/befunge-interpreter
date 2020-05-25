@@ -84,8 +84,15 @@ class Interpreter():
             # According to the specifications, if a is zero, ask the user what result they want.
             a = self.safe_pop()
             b = self.safe_pop()
+            if a == 0:
+                valid = False
+                while not valid:
+                    try:
+                        a = int(input('Division by zero - enter a denominator: '))
+                        valid = True
+                    except:
+                        print('Invalid input')
             self.stack.append(b // a)
-            # TODO handle case where denom is zero
         elif command == '%':
             # Modulo: Pop two values a and b, then push the remainder of the integer division of b/a.
             a = self.safe_pop()
